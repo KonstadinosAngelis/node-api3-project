@@ -6,12 +6,11 @@ const router = express.Router();
 
 router.use(express.json());
 
-router.post('/', (req, res) => {
+router.post('/', validateUser, (req, res) => {
+  console.log(req.body)
   userDB.insert(req.body).then(user => {
   if(user){
     res.status(200).json({successMessage: "User Added"})
-  } else {
-    res.status(404).json({errorMessage: "Please enter a name"})
   }
   })
   .catch(error => {
@@ -29,7 +28,7 @@ router.get('/', (req, res) => {
   })
 });
 
-router.get('/:id', (req, res) => {
+router.get('/:id', validateUserId, (req, res) => {
   userDB.getById(req.params.id)
   .then(post => {
     if(post){
@@ -43,7 +42,7 @@ router.get('/:id', (req, res) => {
   })
 });
 
-router.get('/:id/posts', (req, res) => {
+router.get('/:id/posts', validateUserId, (req, res) => {
   userDB.getById(req.params.id)
   .then(user => {
     userDB.getUserPosts(user.id)
@@ -60,7 +59,7 @@ router.get('/:id/posts', (req, res) => {
   })
 });
 
-router.delete('/:id', (req, res) => {
+router.delete('/:id', validateUserId, (req, res) => {
   userDB.getById(req.params.id)
   .then(user => {
     if(user){
@@ -78,7 +77,7 @@ router.delete('/:id', (req, res) => {
 });
 
 
-router.put('/:id', (req, res) => {
+router.put('/:id', validateUserId, (req, res) => {
   userDB.getById(req.params.id)
   .then(user => {
     if(user){
@@ -96,15 +95,17 @@ router.put('/:id', (req, res) => {
 //custom middleware
 
 function validateUserId(req, res, next) {
-  // do your magic!
+  isNaN(req.params.id) ? res.status(400).json({errorMessage: "Please enter a number"}) :
+  (req.params.id === undefined) ? res.status(400).json({errorMessage: "Please enter an ID"}) :
+  
+  next();
 }
 
 function validateUser(req, res, next) {
-  // do your magic!
-}
+  (!req.body.name) ? res.status(400).json({errorMessage: "Please enter a name object"}):
+  (req.body.name === undefined || "") ? res.status(400).json({errorMessage: "Please enter a name"}):
 
-function validatePost(req, res, next) {
-  // do your magic!
+  next();
 }
 
 module.exports = router;

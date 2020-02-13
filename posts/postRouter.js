@@ -6,18 +6,20 @@ const router = express.Router();
 
 router.use(express.json());
 
-router.post('/:id', (req, res) => {
-  if(req.body){
+router.post('/:id', validatePostId, validatePost, (req, res) => {
+  const post = {...req.body, user_id: req.params.id}
+  console.log(post)
   postDB.insert(post)
   .then(post => {
     res.status(201).json(post)
   })
   .catch(error => {
+    if(error.errno = 19){
+      res.status(500).json({errorMessage: "User doesn't exist"})
+    } else {
     res.status(500).json({errorMessage: "Something is wrong with the server"})
+    }
   })
-  } else {
-    res.status(404).json({errorMessage: "Please enter all the data necesarry"})
-  }
 })
 
 router.get('/', (req, res) => {
@@ -30,14 +32,14 @@ router.get('/', (req, res) => {
   })
 });
 
-router.get('/:id', (req, res) => {
+router.get('/:id', validatePostId, (req, res) => {
   postDB.getById(req.params.id)
   .then(post => {
     console.log(post)
     if(post){
     res.status(200).json(post)
     } else {
-      res.status(404).json({errorMessage: "Can't find user"})
+      res.status(404).json({errorMessage: "Can't find post"})
     }
   })
   .catch(error => {
@@ -45,7 +47,7 @@ router.get('/:id', (req, res) => {
   })
 });
 
-router.delete('/:id', (req, res) => {
+router.delete('/:id', validatePostId, (req, res) => {
   postDB.getById(req.params.id)
   .then(user => {
     if(user){
@@ -62,7 +64,7 @@ router.delete('/:id', (req, res) => {
 })
 });
 
-router.put('/:id', (req, res) => {
+router.put('/:id', validatePostId, (req, res) => {
   postDB.getById(req.params.id)
   .then(post => {
     if(post){
@@ -82,7 +84,18 @@ router.put('/:id', (req, res) => {
 // custom middleware
 
 function validatePostId(req, res, next) {
-  // do your magic!
+  isNaN(req.params.id) ? res.status(400).json({errorMessage: "Please enter a number"}) :
+  (req.params.id === undefined) ? res.status(400).json({errorMessage: "Please enter an ID"}) :
+  
+  next();
+}
+
+function validatePost( req, res ,next) {
+  (!req.body.text) ? res.status(400).json({errorMessage: "Please enter a text object"}):
+  (req.body.text === undefined || "") ? res.status(400).json({errorMessage: "Please enter text"}):
+
+
+  next();
 }
 
 module.exports = router;
